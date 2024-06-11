@@ -1,0 +1,4 @@
+{
+    "appService.defaultWebAppToDeploy": "/subscriptions/e4e46d1e-7322-456d-a345-ef5e72a75d0e/resourceGroups/jpmotorsgtapi/providers/Microsoft.Web/sites/jpmotorsgtapi",
+    "appService.deploySubpath": "."
+}
