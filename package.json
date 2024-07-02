@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "description": "",
   "main": "app.mjs",
-  "type": "module", // Asegúrate de tener esta línea para indicar que estás usando módulos ECMAScript
+  "type": "module", 
   "scripts": {
-    "start": "node app.mjs", // Usar `node app.mjs` sin la bandera --experimental-modules
+    "start": "node app.mjs", 
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon app.mjs"
   },
