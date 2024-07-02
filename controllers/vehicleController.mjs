@@ -1,30 +1,3 @@
-<<<<<<< HEAD
-import express from "express";
-import multer from "multer";
-import sequelize from "../config/config.mjs";
-
-const vehiculosRouter = express.Router();
-vehiculosRouter.use(express.urlencoded({ extended: true }));
-vehiculosRouter.use(express.json());
-
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, "./JpMotor/Images/nuevos/"); // Ajusta la ruta según sea necesario
-  },
-  filename: function (req, file, cb) {
-    cb(null, Date.now() + '-' + file.originalname);
-  },
-});
-
-const upload = multer({ storage: storage });
-
-const vehiculoController = {
-  // Método para obtener todos los vehículos
-  getVehiculos: async (req, res) => {
-    try {
-      const result = await sequelize.query("SELECT * FROM Vehiculos", {
-        type: sequelize.QueryTypes.SELECT
-=======
 import fs from 'fs/promises';
 import path from 'path';
 import sequelize from '../config/config.mjs'; 
@@ -35,7 +8,6 @@ const vehiculoController = {
     try {
       const result = await sequelize.query("SELECT * FROM Vehiculos", {
         type: sequelize.QueryTypes.SELECT,
->>>>>>> 77a15bd (Initial commit)
       });
 
       if (result.length > 0) {
@@ -49,31 +21,18 @@ const vehiculoController = {
     }
   },
 
-<<<<<<< HEAD
-  // Método para obtener el detalle de un vehículo por ID usando un procedimiento almacenado
-  getVehiculoDetalle: async (req, res) => {
-    try {
-      const { id } = req.params;
-      const result = await sequelize.query("CALL ConsultaCompletaPorID(:id)", {
-        replacements: { id },
-        type: sequelize.QueryTypes.SELECT
-=======
   getVehiculoMotor: async (req, res) => {
     try {
       const { id } = req.params;
       const result = await sequelize.query("CALL GetMotorDescription(:id)", {
         replacements: { id },
         type: sequelize.QueryTypes.SELECT,
->>>>>>> 77a15bd (Initial commit)
       });
 
       if (result.length === 0) {
         res.status(404).send("Vehículo no encontrado");
         return;
       }
-<<<<<<< HEAD
-      res.json(result[0][0]);
-=======
 
       const descriptionsObject = result[0];
       const motorDescriptions = Object.values(descriptionsObject).map(
@@ -184,30 +143,19 @@ const vehiculoController = {
       );
 
       res.json({ Dimensiones: dimensionesDescriptions });
->>>>>>> 77a15bd (Initial commit)
     } catch (error) {
       console.error("Error al obtener el vehículo:", error);
       res.status(500).send("Error interno del servidor");
     }
   },
 
-<<<<<<< HEAD
-  // Método para obtener vehículos por marca
-=======
->>>>>>> 77a15bd (Initial commit)
   getVehiculosPorMarca: async (req, res) => {
     try {
       const { marca } = req.query;
       let result = [];
-<<<<<<< HEAD
-      if (marca === 'all') {
-        result = await sequelize.query("SELECT * FROM Vehiculos", {
-          type: sequelize.QueryTypes.SELECT
-=======
       if (marca === "all") {
         result = await sequelize.query("SELECT * FROM Vehiculos", {
           type: sequelize.QueryTypes.SELECT,
->>>>>>> 77a15bd (Initial commit)
         });
       } else {
         result = await sequelize.query(
@@ -215,47 +163,21 @@ const vehiculoController = {
           V.PrecioWeb, V.PrecioLista, V.Imagen, V.MarcaID 
           FROM Vehiculos V 
           INNER JOIN Marca M ON V.MarcaID = M.MarcaID 
-<<<<<<< HEAD
-          WHERE M.MarcaID = :marca`, 
-=======
           WHERE M.MarcaID = :marca`,
->>>>>>> 77a15bd (Initial commit)
           { replacements: { marca }, type: sequelize.QueryTypes.SELECT }
         );
       }
       if (result.length > 0) {
         res.status(200).json(result);
       } else {
-<<<<<<< HEAD
-        res.status(404).json({ message: "No hay vehículos de esa marca" });
-      }
-    } catch (error) {
-      console.error("Error al obtener los vehículos de la marca:", error);
-=======
         res.status(404).json({ message: "No se encontraron vehículos para esta marca" });
       }
     } catch (error) {
       console.error("Error al obtener vehículos:", error);
->>>>>>> 77a15bd (Initial commit)
       res.status(500).send("Error interno del servidor");
     }
   },
 
-<<<<<<< HEAD
-  // Método para obtener un vehículo por su ID
-  getVehiculoPorID: async (req, res) => {
-    try {
-      const { id } = req.params;
-      const result = await sequelize.query("SELECT * FROM Vehiculos WHERE VehiculoID = :id", {
-        replacements: { id },
-        type: sequelize.QueryTypes.SELECT
-      });
-
-      if (result.length === 0) {
-        res.status(404).send("Vehículo no encontrado");
-        return;
-      }
-=======
   getVehiculoPorID: async (req, res) => {
     const { id } = req.params;
 
@@ -272,15 +194,11 @@ const vehiculoController = {
       }
 
       // Enviar el vehículo en crudo al cliente
->>>>>>> 77a15bd (Initial commit)
       res.json(result[0]);
     } catch (error) {
       console.error("Error al obtener el vehículo:", error);
       res.status(500).send("Error interno del servidor");
     }
-<<<<<<< HEAD
-  }
-=======
   },
 
   post: async (req, res) => {
@@ -366,7 +284,6 @@ const vehiculoController = {
       res.status(500).send("Error interno del servidor");
     }
   },
->>>>>>> 77a15bd (Initial commit)
 };
 
 export default vehiculoController;

@@ -1,17 +1,4 @@
 import { Router } from "express";
-<<<<<<< HEAD
-import vehiculoController from "../controllers/vehiculoController.mjs";
-const router = Router();
-
-
-// Rutas para vehículos
-router.get("/", vehiculoController.getVehiculos);
-router.get('/detalle/:id', vehiculoController.getVehiculoDetalle);
-router.get('/porMarca', vehiculoController.getVehiculosPorMarca);
-router.get('/:id', vehiculoController.getVehiculoPorID);
-
-export default router;
-=======
 import multer from "multer";
 import path from "path";
 import fs from "fs";
@@ -84,4 +71,3 @@ router.put("/detalleSeguridad/:VehiculoID", detalleSeguridadController.put);
 router.post("/eliminarSeguridad", detalleSeguridadController.post);
 
 export default router;
->>>>>>> 77a15bd (Initial commit)
