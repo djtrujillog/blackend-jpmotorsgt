@@ -3,9 +3,8 @@
   "version": "1.0.0",
   "description": "",
   "main": "app.mjs",
-  "type": "module", 
   "scripts": {
-    "start": "node app.mjs", 
+    "start": "node app.mjs",
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon app.mjs"
   },

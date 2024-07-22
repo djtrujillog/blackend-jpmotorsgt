@@ -1,16 +1,15 @@
 import { Router } from "express";
 import multer from "multer";
 import path from "path";
-import fs from "fs";
 import { fileURLToPath } from "url";
 
 // Importar controladores
-import vehiculoController from "../controllers/vehicleController.mjs";
-import detalleMotorController from "../controllers/detalleMotorController.mjs";
-import detalleDimensionesController from "../controllers/detalleDimensionesController.mjs";
-import detalleExteriorController from "../controllers/detalleExteriorController.mjs";
-import detalleInteriorController from "../controllers/detalleInteriorController.mjs";
-import detalleSeguridadController from "../controllers/detalleSeguridadController.mjs";
+import vehiculoController from "../controllers/Vehiculos/vehicleController.mjs";
+import detalleMotorController from "../controllers/Vehiculos/detalleMotorController.mjs";
+import detalleDimensionesController from "../controllers/Vehiculos/detalleDimensionesController.mjs";
+import detalleExteriorController from "../controllers/Vehiculos/detalleExteriorController.mjs";
+import detalleInteriorController from "../controllers/Vehiculos/detalleInteriorController.mjs";
+import detalleSeguridadController from "../controllers/Vehiculos/detalleSeguridadController.mjs";
 
 // Obtener la ruta del directorio actual
 const __filename = fileURLToPath(import.meta.url);

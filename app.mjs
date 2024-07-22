@@ -8,6 +8,8 @@ import dashboardRouters from './routes/dashboard.routes.mjs';
 import vehiculosRouter from './routes/vehiculo.routes.mjs';
 import marcasRouter from './routes/marca.routes.mjs';
 import cotizacionRouter from './routes/cotizacion.routes.mjs'; // Asegúrate de que el nombre del archivo sea correcto
+import empleadosRouter from './routes/empleados.routes.mjs';
+import clienteRouter from './routes/cliente.routes.mjs';
 
 // Crear instancia de Express
 const app = express();
@@ -28,9 +30,11 @@ app.get('/', (req, res) => res.json({ message: 'API JP Motors GT' }));
 // Configuración de rutas
 app.use('/auth', authRouters);
 app.use('/dashboard', dashboardRouters);
-app.use('/vehiculos', vehiculosRouter);
-app.use('/marcas', marcasRouter);
-app.use('/cotizaciones', cotizacionRouter);
+app.use('/vehiculos', vehiculosRouter); //ruta de vehiculos
+app.use('/marcas', marcasRouter); // ruta de marcas
+app.use('/cotizaciones', cotizacionRouter); // ruta de cotizaciones
+app.use('/empleados', empleadosRouter); //ruta de empleados
+app.use('/clientes', clienteRouter); //ruta de empleados
 
 // Conectar a la base de datos y sincronizar Sequelize
 sequelize.authenticate()
