@@ -1,69 +1,80 @@
-import Empleado from "../models/empleado.mjs";
-import jwt from "jsonwebtoken";
-import config from "../utils/config.mjs";
+// authController.mjs
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import sequelize from '../config/config.mjs';
+import config from '../utils/config.mjs';
 
-export const signUp = async (req, res) => {
-    //Evitar registros duplicados
-    try {
-        const { CorreoElectronico } = req.body;
-        
-        const existeUsuario = await Empleado.findOne({ where: { CorreoElectronico } });
-        if( existeUsuario ){
-            const error = new Error('Usuario ya registrado');
-            return res.status(400).json({ message: error.message });
-        };
-    
-        //Encriptar la contraseña antes de almacenar el empleado en la base de datos
-        const hashedPassword = await Empleado.encryptPassword(req.body.ContrasenaHash);
-    
-        //Crear un nuevo usuario en la base de datos
-        const newEmpleado = await Empleado.create({    
-            Nombre: req.body.Nombre,
-            Apellido: req.body.Apellido,
-            Cargo: req.body.Cargo,
-            Telefono: req.body.Telefono,
-            CorreoElectronico: req.body.CorreoElectronico,
-            Usuario: req.body.Usuario,
-            Estado: 1,
-            ContrasenaHash: hashedPassword
-        });
-        const token = jwt.sign({ id: newEmpleado.EmpleadoID }, config.SECRET, {
-        expiresIn: 7200
-        });
-        res.status(201).json({ newEmpleado, token });
+const signIn = async (req, res) => {
+  const { usuario, contrasena } = req.body;
 
-    } catch (error) {
-        console.error('Error al agregar empleado:', error);
-        res.status(500).send('Error interno del servidor'); 
+  if (!usuario || !contrasena) {
+    return res.status(400).json({ message: 'Usuario y contraseña son requeridos' });
+  }
+
+  try {
+    const [user] = await sequelize.query(
+      `SELECT * FROM Empleados WHERE Usuario = ?`,
+      { replacements: [usuario], type: sequelize.QueryTypes.SELECT }
+    );
+
+    if (!user || !bcrypt.compareSync(contrasena, user.ContrasenaHash)) {
+      return res.status(401).json({ message: 'Usuario o contraseña incorrectos' });
     }
+
+    const roles = await sequelize.query(
+      `SELECT r.Nombre FROM roles r 
+       INNER JOIN Empleado_roles er ON r.RolID = er.RolID 
+       WHERE er.EmpleadoID = ?`,
+      { replacements: [user.EmpleadoID], type: sequelize.QueryTypes.SELECT }
+    );
+
+    if (roles.length === 0) {
+      return res.status(401).json({ message: 'Usuario no tiene roles asignados' });
+    }
+
+    const token = jwt.sign({ id: user.EmpleadoID, roles: roles.map(r => r.Nombre) }, config.SECRET, { expiresIn: '1h' });
+
+    res.json({ token, roles: roles.map(r => r.Nombre) });
+  } catch (error) {
+    console.error('Error en el inicio de sesión:', error);
+    res.status(500).send('Error interno del servidor');
+  }
 };
 
-export const signIn = async (req, res) => {
-    try {
-      const { Usuario, ContrasenaHash } = req.body;
-      const empleado = await Empleado.findOne({ where: { Usuario } });
-      if( !empleado ){
-        return res.status(404).json({ message: 'Usuario no encontrado' });
+const signUp = async (req, res) => {
+  const { Usuario, Contrasena, Nombre, Apellido, Cargo, Telefono, CorreoElectronico, Estado, Roles } = req.body;
+
+  if (!Usuario || !Contrasena || !Nombre || !Apellido || !Cargo || !Telefono || !CorreoElectronico || !Estado || !Roles) {
+    return res.status(400).json({ message: 'Todos los campos son requeridos' });
+  }
+
+  try {
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(Contrasena, salt);
+
+    const [result] = await sequelize.query(
+      `INSERT INTO Empleados (Usuario, ContrasenaHash, Nombre, Apellido, Cargo, Telefono, CorreoElectronico, Estado) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      {
+        replacements: [Usuario.toLowerCase(), hashedPassword, Nombre, Apellido, Cargo, Telefono, CorreoElectronico, Estado],
+        type: sequelize.QueryTypes.INSERT
       }
-      const matchPassword = await Empleado.comparePassword(ContrasenaHash, empleado.ContrasenaHash);
-      if( !matchPassword ){
-        return res.status(401).json({ token: null, message: 'Contraseña incorrecta' });
-      }
-      const token = jwt.sign({ id: empleado.EmpleadoID }, config.SECRET, {
-        expiresIn: 7200
-      });
-  
-      //Seleccionamos los campos que necesita el usuario
-      const { Nombre, Apellido, Cargo, Estado } = empleado;
-  
-      res.status(200).json({ user: { Nombre, Apellido, Cargo, Estado }, token });
-    } catch (error) {
-      console.error('Error al autenticar usuario:', error);
-      res.status(500).send('Error interno del servidor');    
+    );
+
+    const empleadoId = result.insertId;
+
+    for (const rol of Roles) {
+      await sequelize.query(
+        `INSERT INTO Empleado_roles (EmpleadoID, RolID) VALUES (?, ?)`,
+        { replacements: [empleadoId, rol], type: sequelize.QueryTypes.INSERT }
+      );
     }
+
+    res.json({ message: 'Empleado registrado con éxito' });
+  } catch (error) {
+    console.error('Error en el registro:', error);
+    res.status(500).send('Error interno del servidor');
+  }
 };
 
-export const perfil = async (req, res) => {
-    const { user } = req;
-    res.json(user);
-}
+export { signIn, signUp };

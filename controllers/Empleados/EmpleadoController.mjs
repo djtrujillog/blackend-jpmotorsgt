@@ -1,4 +1,4 @@
-import { Router } from 'express';
+// EmpleadoController.mjs
 import bcrypt from 'bcrypt';
 import sequelize from '../../config/config.mjs';
 
@@ -20,7 +20,6 @@ const EmpleadoController = {
     }
   },
 
-  // Obtener un empleado por su ID
   getById: async (req, res) => {
     const id = req.params.id;
     try {
@@ -41,29 +40,53 @@ const EmpleadoController = {
     }
   },
 
- // Agregar un nuevo empleado
- post: async (req, res) => {
-  const { Usuario, Contrasena, Nombre, Apellido, Cargo, Telefono, CorreoElectronico, Estado } = req.body;
-  try {
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(Contrasena, salt);
+  getRolesByEmpleadoId: async (req, res) => {
+    const id = req.params.id;
+    try {
+      const results = await sequelize.query(
+        `SELECT roles.Nombre FROM roles
+         INNER JOIN Empleado_roles ON roles.RolID = Empleado_roles.RolID
+         WHERE Empleado_roles.EmpleadoID = ?`,
+        {
+          replacements: [id],
+          type: sequelize.QueryTypes.SELECT
+        }
+      );
 
-    const results = await sequelize.query(
-      `INSERT INTO Empleados (Usuario, ContrasenaHash, Nombre, Apellido, Cargo, Telefono, CorreoElectronico, Estado) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      {
-        replacements: [Usuario.toLowerCase(), hashedPassword, Nombre, Apellido, Cargo, Telefono, CorreoElectronico, Estado],
-        type: sequelize.QueryTypes.INSERT
+      if (results.length === 0) {
+        res.status(404).send("Roles no encontrados para el empleado");
+        return;
       }
-    );
 
-    res.json({ message: 'Empleado agregado con éxito', results });
-  } catch (error) {
-    console.error('Error al agregar empleado:', error);
-    res.status(500).send('Error interno del servidor');
-  }
-},
-  // Actualizar un empleado existente
+      res.json(results);
+    } catch (error) {
+      console.error("Error al obtener roles del empleado:", error);
+      res.status(500).send("Error interno del servidor");
+    }
+  },
+
+  post: async (req, res) => {
+    const { Usuario, Contrasena, Nombre, Apellido, Cargo, Telefono, CorreoElectronico, Estado } = req.body;
+    try {
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(Contrasena, salt);
+
+      const results = await sequelize.query(
+        `INSERT INTO Empleados (Usuario, ContrasenaHash, Nombre, Apellido, Cargo, Telefono, CorreoElectronico, Estado) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        {
+          replacements: [Usuario.toLowerCase(), hashedPassword, Nombre, Apellido, Cargo, Telefono, CorreoElectronico, Estado],
+          type: sequelize.QueryTypes.INSERT
+        }
+      );
+
+      res.json({ message: 'Empleado agregado con éxito', results });
+    } catch (error) {
+      console.error('Error al agregar empleado:', error);
+      res.status(500).send('Error interno del servidor');
+    }
+  },
+
   put: async (req, res) => {
     const id = req.params.id;
     const { Usuario, Contrasena, Nombre, Apellido, Cargo, Telefono, CorreoElectronico, Estado } = req.body;
@@ -104,7 +127,6 @@ const EmpleadoController = {
     }
   },
 
-  // Eliminar un empleado
   delete: async (req, res) => {
     const id = req.params.id;
     try {
@@ -118,8 +140,58 @@ const EmpleadoController = {
       console.error("Error al eliminar empleado:", error);
       res.status(500).send("Error interno del servidor");
     }
+  },
+  getRoles: async (req, res) => {
+    try {
+      const results = await sequelize.query("SELECT * FROM roles", {
+        type: sequelize.QueryTypes.SELECT,
+      });
+
+      if (results.length > 0) {
+        res.status(200).json(results);
+      } else {
+        res.status(404).json({ message: "No hay roles disponibles" });
+      }
+    } catch (error) {
+      console.error("Error al obtener roles:", error);
+      res.status(500).send("Error interno del servidor");
+    }
+  },
+    
+  getRoles: async (req, res) => {
+    try {
+      const results = await sequelize.query("SELECT * FROM roles", {
+        type: sequelize.QueryTypes.SELECT,
+      });
+
+      if (results.length > 0) {
+        res.status(200).json(results);
+      } else {
+        res.status(404).json({ message: "No hay roles disponibles" });
+      }
+    } catch (error) {
+      console.error("Error al obtener roles:", error);
+      res.status(500).send("Error interno del servidor");
+    }
+  },
+
+  asignarRoles: async (req, res) => {
+    const { EmpleadoID, RolID } = req.body;
+    try {
+      await sequelize.query(
+        `INSERT INTO Empleado_roles (EmpleadoID, RolID) VALUES (?, ?)`,
+        {
+          replacements: [EmpleadoID, RolID],
+          type: sequelize.QueryTypes.INSERT
+        }
+      );
+
+      res.json({ message: 'Rol asignado con éxito' });
+    } catch (error) {
+      console.error('Error al asignar rol:', error);
+      res.status(500).send('Error interno del servidor');
+    }
   }
 };
 
 export default EmpleadoController;
-
