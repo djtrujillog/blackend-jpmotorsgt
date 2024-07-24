@@ -1,4 +1,3 @@
-// EmpleadoController.mjs
 import bcrypt from 'bcrypt';
 import sequelize from '../../config/config.mjs';
 
@@ -130,6 +129,13 @@ const EmpleadoController = {
   delete: async (req, res) => {
     const id = req.params.id;
     try {
+      // Eliminar roles asignados al empleado
+      await sequelize.query("DELETE FROM Empleado_roles WHERE EmpleadoID = ?", {
+        replacements: [id],
+        type: sequelize.QueryTypes.DELETE
+      });
+
+      // Eliminar el empleado
       const results = await sequelize.query("DELETE FROM Empleados WHERE EmpleadoID = ?", {
         replacements: [id],
         type: sequelize.QueryTypes.DELETE
@@ -141,23 +147,7 @@ const EmpleadoController = {
       res.status(500).send("Error interno del servidor");
     }
   },
-  getRoles: async (req, res) => {
-    try {
-      const results = await sequelize.query("SELECT * FROM roles", {
-        type: sequelize.QueryTypes.SELECT,
-      });
 
-      if (results.length > 0) {
-        res.status(200).json(results);
-      } else {
-        res.status(404).json({ message: "No hay roles disponibles" });
-      }
-    } catch (error) {
-      console.error("Error al obtener roles:", error);
-      res.status(500).send("Error interno del servidor");
-    }
-  },
-    
   getRoles: async (req, res) => {
     try {
       const results = await sequelize.query("SELECT * FROM roles", {
