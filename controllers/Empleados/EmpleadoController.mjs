@@ -167,7 +167,22 @@ const EmpleadoController = {
 
   asignarRoles: async (req, res) => {
     const { EmpleadoID, RolID } = req.body;
+    
+    if (!EmpleadoID || !RolID) {
+      return res.status(400).send('EmpleadoID y RolID son requeridos.');
+    }
+    
     try {
+      // Eliminar todos los roles actuales del empleado
+      await sequelize.query(
+        `DELETE FROM Empleado_roles WHERE EmpleadoID = ?`,
+        {
+          replacements: [EmpleadoID],
+          type: sequelize.QueryTypes.DELETE
+        }
+      );
+  
+      // Insertar el nuevo rol
       await sequelize.query(
         `INSERT INTO Empleado_roles (EmpleadoID, RolID) VALUES (?, ?)`,
         {
@@ -175,13 +190,19 @@ const EmpleadoController = {
           type: sequelize.QueryTypes.INSERT
         }
       );
-
-      res.json({ message: 'Rol asignado con éxito' });
+    
+      res.json({ message: 'Rol actualizado con éxito' });
     } catch (error) {
       console.error('Error al asignar rol:', error);
       res.status(500).send('Error interno del servidor');
     }
   }
+  
+  
+  
+  
+  
+  
 };
 
 export default EmpleadoController;
