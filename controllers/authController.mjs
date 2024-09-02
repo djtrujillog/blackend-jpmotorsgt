@@ -1,4 +1,3 @@
-// authController.mjs
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import sequelize from '../config/config.mjs';
@@ -32,9 +31,19 @@ const signIn = async (req, res) => {
       return res.status(401).json({ message: 'Usuario no tiene roles asignados' });
     }
 
-    const token = jwt.sign({ id: user.EmpleadoID, roles: roles.map(r => r.Nombre) }, config.SECRET, { expiresIn: '1h' });
+    const token = jwt.sign(
+      { id: user.EmpleadoID, roles: roles.map(r => r.Nombre) },
+      config.SECRET,
+      { expiresIn: '1h' }
+    );
 
-    res.json({ token, roles: roles.map(r => r.Nombre) });
+    res.json({
+      token,
+      roles: roles.map(r => r.Nombre),
+      id: user.EmpleadoID,
+      nombre: user.Nombre,
+      apellido: user.Apellido
+    });
   } catch (error) {
     console.error('Error en el inicio de sesión:', error);
     res.status(500).send('Error interno del servidor');

@@ -1,7 +1,13 @@
-// import fs from 'fs/promises';
-// import path from 'path';
-import sequelize from '../../config/config.mjs'; 
+//vehicleController.mjs
 
+import path from 'path';
+import { promises as fs } from 'fs'; // Importa fs/promises
+import sequelize from "../../config/config.mjs";
+import { fileURLToPath } from 'url'; // Necesario para obtener __dirname en ES Modules
+
+// Configurar __dirname en ES Modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const vehiculoController = {
   getVehiculos: async (req, res) => {
@@ -41,7 +47,7 @@ const vehiculoController = {
 
       res.json({ Motor: motorDescriptions });
     } catch (error) {
-      console.error("Error al obtener el vehículo:", error);
+      console.error("Error al obtener el los datos del motor:", error);
       res.status(500).send("Error interno del servidor");
     }
   },
@@ -180,26 +186,42 @@ const vehiculoController = {
 
   getVehiculoPorID: async (req, res) => {
     const { id } = req.params;
-
+  
     try {
       // Consultar el vehículo por ID desde la base de datos
       const result = await sequelize.query(
         "SELECT * FROM Vehiculos WHERE VehiculoID = :id",
         { replacements: { id }, type: sequelize.QueryTypes.SELECT }
       );
-
+  
       // Si no se encuentra el vehículo, retornar un error 404
       if (result.length === 0) {
         return res.status(404).send("Vehículo no encontrado");
       }
-
-      // Enviar el vehículo en crudo al cliente
-      res.json(result[0]);
+  
+      // Obtener la imagen desde la base de datos
+      const imagenBuffer = result[0].Imagen; // Asume que es un Buffer almacenado
+  
+      try {
+        // Convertir el Buffer a base64
+        const base64Image = Buffer.from(imagenBuffer).toString('base64');
+        const imageUrl = `data:image/jpeg;base64,${base64Image}`;
+  
+        // Agregar la URL de la imagen al objeto del vehículo
+        result[0].ImagenURL = imageUrl;
+  
+        // Enviar el vehículo con la URL de la imagen al cliente
+        res.json(result[0]);
+      } catch (error) {
+        console.error("Error al procesar la imagen:", error);
+        res.status(500).send("Error interno del servidor al procesar la imagen");
+      }
     } catch (error) {
-      console.error("Error al obtener el vehículo:", error);
+      console.error("Error al obtener el vehículo getVehiculoPorID:", error);
       res.status(500).send("Error interno del servidor");
     }
   },
+  
 
   post: async (req, res) => {
     try {

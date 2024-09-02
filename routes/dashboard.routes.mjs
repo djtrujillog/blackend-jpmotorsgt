@@ -1,6 +1,6 @@
 // dashboard.routes.mjs
 import { Router } from 'express';
-import cotizacionController from '../controllers/cotizacionController.mjs';
+import cotizacionController from '../controllers/Cotizaciones/cotizacionController.mjs';
 import checkAuth from '../middleware/checkAuth.mjs';
 
 const router = Router();
