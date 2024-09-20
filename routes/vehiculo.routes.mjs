@@ -25,6 +25,10 @@ const router = Router();
 
 // Rutas para vehículos
 router.get("/", vehiculoController.getVehiculos);
+router.get("/usados", vehiculoController.getVehiculosUsados);
+router.get("/nuevos", vehiculoController.getVehiculosNuevos);
+router.get("/paginar", vehiculoController.getVehiculos);
+router.get("/pornombre", vehiculoController.getVehiculosNombre);
 router.get("/motor/:id", vehiculoController.getVehiculoMotor);
 router.get("/seguridad/:id", vehiculoController.getVehiculoSeguridad);
 router.get("/interior/:id", vehiculoController.getVehiculoInterior);

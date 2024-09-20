@@ -7,7 +7,7 @@ import authRouters from './routes/auth.routes.mjs';
 import dashboardRouters from './routes/dashboard.routes.mjs';
 import vehiculosRouter from './routes/vehiculo.routes.mjs';
 import marcasRouter from './routes/marca.routes.mjs';
-import cotizacionRouter from './routes/cotizacion.routes.mjs';
+import cotizacionRouter from './routes/cotizacion.Routes.mjs';
 import empleadosRouter from './routes/empleados.routes.mjs';
 import clienteRouter from './routes/cliente.routes.mjs';
 import seguimientoRouter from './routes/seguimiento.routes.mjs';
@@ -21,7 +21,7 @@ app.use(cors());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
-app.get('/', (req, res) => res.json({ message: 'API JP Motors GT Septiembre 2024' }));
+app.get('/', (req, res) => res.json({ message: 'API JP Motors GT Septiembre 20 2024 By J&M' }));
 
 app.use('/auth', authRouters);
 app.use('/dashboard', dashboardRouters);

@@ -1,8 +1,12 @@
 import nodemailer from 'nodemailer';
-import 'dotenv/config'; // Asegúrate de que esto esté al principio del archivo
+import 'dotenv/config';
 
 class nodeMailer {
     static async sendMail({ to, subject, message }) {
+        if (!process.env.SMTP_HOST || !process.env.SMTP_PORT || !process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+            return { success: false, message: 'Missing email configuration in environment variables' };
+        }
+
         const transporter = nodemailer.createTransport({
             host: process.env.SMTP_HOST,
             port: process.env.SMTP_PORT,
@@ -15,8 +19,8 @@ class nodeMailer {
 
         const mailOptions = {
             from: process.env.EMAIL_USER,
-            to, // Destinatario principal
-            bcc: 'contacto@jpmotorsgt.com, prosado@jpmotorsgt.com', // 
+            to,
+            bcc: 'contacto@jpmotorsgt.com, prosado@jpmotorsgt.com',
             subject,
             text: message,
         };

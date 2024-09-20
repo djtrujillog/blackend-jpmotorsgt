@@ -27,6 +27,92 @@ const vehiculoController = {
     }
   },
 
+  getVehiculosNuevos: async (req, res) => {
+    try {
+      const result = await sequelize.query("SELECT * FROM Vehiculos v WHERE Condicion = 'Nuevo' and Estado ='Activo'", {
+        type: sequelize.QueryTypes.SELECT,
+      });
+
+      if (result.length > 0) {
+        res.status(200).json(result);
+      } else {
+        res.status(404).json({ message: "No hay vehículos" });
+      }
+    } catch (error) {
+      console.error("Error al obtener vehículos:", error);
+      res.status(500).send("Error interno del servidor");
+    }
+  },
+
+  getVehiculosUsados: async (req, res) => {
+    try {
+      const result = await sequelize.query("SELECT * FROM Vehiculos v WHERE Condicion = 'Usado' and Estado ='Activo'", {
+        type: sequelize.QueryTypes.SELECT,
+      });
+
+      if (result.length > 0) {
+        res.status(200).json(result);
+      } else {
+        res.status(404).json({ message: "No hay vehículos" });
+      }
+    } catch (error) {
+      console.error("Error al obtener vehículos:", error);
+      res.status(500).send("Error interno del servidor");
+    }
+  },
+  // Backend - Cambios en el endpoint getVehiculos
+getPaginar: async (req, res) => {
+  try {
+    const { page = 1, limit = 10 } = req.query;
+    const offset = (page - 1) * limit;
+
+    const result = await sequelize.query(
+      "SELECT * FROM Vehiculos LIMIT :limit OFFSET :offset",
+      {
+        replacements: { limit: parseInt(limit), offset: parseInt(offset) },
+        type: sequelize.QueryTypes.SELECT,
+      }
+    );
+
+    if (result.length > 0) {
+      // Opcionalmente, contar el total de vehículos
+      const total = await sequelize.query("SELECT COUNT(*) as count FROM Vehiculos", {
+        type: sequelize.QueryTypes.SELECT,
+      });
+      
+      res.status(200).json({
+        data: result,
+        total: total[0].count,
+        page: parseInt(page),
+        limit: parseInt(limit)
+      });
+    } else {
+      res.status(404).json({ message: "No hay vehículos" });
+    }
+  } catch (error) {
+    console.error("Error al obtener vehículos:", error);
+    res.status(500).send("Error interno del servidor");
+  }
+},
+
+
+  getVehiculosNombre: async (req, res) => {
+    try {
+      const result = await sequelize.query("SELECT VehiculoID,Modelo,Marca,Anio,PrecioGerente,PrecioWeb, PrecioLista, MarcaID FROM Vehiculos", {
+        type: sequelize.QueryTypes.SELECT,
+      });
+
+      if (result.length > 0) {
+        res.status(200).json(result);
+      } else {
+        res.status(404).json({ message: "No hay vehículos" });
+      }
+    } catch (error) {
+      console.error("Error al obtener vehículos:", error);
+      res.status(500).send("Error interno del servidor");
+    }
+  },
+
   getVehiculoMotor: async (req, res) => {
     try {
       const { id } = req.params;
@@ -230,8 +316,8 @@ const vehiculoController = {
 
       // Guardar el buffer de la imagen en la base de datos junto con otros datos del vehículo
       const result = await sequelize.query(
-        `INSERT INTO Vehiculos (Modelo, Marca, Anio, PrecioGerente, PrecioWeb, PrecioLista, Imagen, MarcaID)
-        VALUES (:Modelo, :Marca, :Anio, :PrecioGerente, :PrecioWeb, :PrecioLista, :Imagen, :MarcaID)`,
+        `INSERT INTO Vehiculos (Modelo, Marca, Anio, PrecioGerente, PrecioWeb, PrecioLista, Imagen, MarcaID, Condicion, Estado)
+        VALUES (:Modelo, :Marca, :Anio, :PrecioGerente, :PrecioWeb, :PrecioLista, :Imagen, :MarcaID, :Condicion, :Estado)`,
         {
           replacements: {
             Modelo: body.Modelo,
@@ -242,6 +328,8 @@ const vehiculoController = {
             PrecioLista: body.PrecioLista,
             Imagen: imagenBuffer,
             MarcaID: body.MarcaID,
+            Condicion: body.Condicion,
+            Estado: body.Estado,
           },
         }
       );
@@ -269,7 +357,9 @@ const vehiculoController = {
           PrecioWeb = :PrecioWeb, 
           PrecioLista = :PrecioLista, 
           Imagen = IFNULL(:Imagen, Imagen), 
-          MarcaID = :MarcaID 
+          MarcaID = :MarcaID ,
+          Condicion = :Condicion,
+          Estado = :Estado
         WHERE VehiculoID = :id`,
         {
           replacements: {
@@ -282,6 +372,8 @@ const vehiculoController = {
             Imagen: imagenBuffer,
             MarcaID: body.MarcaID,
             id: id,
+            Condicion: body.Condicion,
+            Estado: body.Estado
           },
         }
       );
