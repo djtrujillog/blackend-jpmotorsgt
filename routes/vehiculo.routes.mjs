@@ -12,6 +12,8 @@ import detalleDimensionesController from "../controllers/Vehiculos/detalleDimens
 import detalleExteriorController from "../controllers/Vehiculos/detalleExteriorController.mjs";
 import detalleInteriorController from "../controllers/Vehiculos/detalleInteriorController.mjs";
 import detalleSeguridadController from "../controllers/Vehiculos/detalleSeguridadController.mjs";
+import detalleGarantiacontroller from "../controllers/Vehiculos/detalleGarantiaController.mjs";
+
 
 // Obtener la ruta del directorio actual
 const __filename = fileURLToPath(import.meta.url);
@@ -40,7 +42,7 @@ router.post("/", upload.single("file"), vehiculoController.post);
 router.put("/:id", upload.single("file"), vehiculoController.put);
 router.delete("/:VehiculoID", vehiculoController.delete);
 
-// Rutas para detalleDimensiones
+// Rutas para detalleDimensiones 
 router.get("/detalleDimensiones", detalleDimensionesController.getAll);
 router.get("/detalleDimensiones/:VehiculoID", detalleDimensionesController.getByVehiculoID);
 router.post("/detalleDimensiones", detalleDimensionesController.create);
@@ -74,5 +76,13 @@ router.get("/detalleSeguridad/:VehiculoID", detalleSeguridadController.getByVehi
 router.post("/detalleSeguridad", detalleSeguridadController.create);
 router.put("/detalleSeguridad/:VehiculoID", detalleSeguridadController.put);
 router.post("/eliminarSeguridad", detalleSeguridadController.post);
+
+// Rutas para detalleSeguridad
+router.get("/detalleGarantia", detalleGarantiacontroller.getAll);
+router.get("/detalleGarantia/:VehiculoID", detalleGarantiacontroller.getByVehiculoID);
+router.post("/detalleGarantia", detalleGarantiacontroller.create);
+router.put("/detalleGarantia/:VehiculoID", detalleGarantiacontroller.put);
+router.post("/eliminarput", detalleGarantiacontroller.delete);
+
 
 export default router;

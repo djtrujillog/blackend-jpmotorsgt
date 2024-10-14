@@ -1,5 +1,5 @@
 class CotizacionClass {
-    constructor(nombreEmpleado, nombreCliente, vehiculoDescripcion, cotizacionId, empleadoId, clienteId, vehiculoId, fechaCotizacion, estadoCotizacion, fechaSeguimiento)
+    constructor(nombreEmpleado, nombreCliente, vehiculoDescripcion, cotizacionId, empleadoId, clienteId, vehiculoId, fechaCotizacion, estadoCotizacion, fechaSeguimiento, noFactura, precioPlacas, precioCotizacion, coloresDisponibles)
     {
         this.nombreEmpleado = nombreEmpleado;
         this.nombreCliente = nombreCliente;
@@ -11,6 +11,10 @@ class CotizacionClass {
         this.fechaCotizacion = fechaCotizacion;
         this.estadoCotizacion = estadoCotizacion;
         this.fechaSeguimiento = fechaSeguimiento;
+        this.noFactura = noFactura;
+        this.precioPlacas = precioPlacas;
+        this.precioCotizacion = precioCotizacion;
+        this.coloresDisponibles = coloresDisponibles;
     }
 
     seguimientos = null;

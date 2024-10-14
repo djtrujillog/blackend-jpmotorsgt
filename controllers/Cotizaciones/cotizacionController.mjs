@@ -1,5 +1,6 @@
 import sequelize from "../../config/config.mjs";
 import CotizacionClass from '../../models/cotizacion.mjs'
+import seguimientoController from "./seguimientoController.mjs";
 
 const cotizacionController = {
     getCotizacionesByEstado: async (req, res) => {
@@ -190,7 +191,7 @@ const cotizacionController = {
                 throw new Error("404: No se encontraron registros para los parámetros enviados");
 
             //metiendo a la clase como arreglo
-            const cotizaciones = result.map(r => new CotizacionClass(r.NombreEmpleado, r.NombreCliente, r.VehiculoDescripcion, r.CotizacionID, r.EmpleadoID, r.ClienteID, r.VehiculoID, r.FechaCotizacion, r.EstadoCotizacion, r.FechaSeguimiento));
+            const cotizaciones = result.map(r => new CotizacionClass(r.NombreEmpleado, r.NombreCliente, r.VehiculoDescripcion, r.CotizacionID, r.EmpleadoID, r.ClienteID, r.VehiculoID, r.FechaCotizacion, r.EstadoCotizacion, r.FechaSeguimiento, r.NoFactura, r.PrecioPlacas, r.PrecioCotizacion, r.ColoresDisponibles));
 
             // conviertiendo solo los id's para recuperar solo los que me interan
             const ids = result.map(c => c.CotizacionID).join(',');
@@ -225,16 +226,16 @@ const cotizacionController = {
         }
     },
     post: async (req, res) => {
-        const { CotizacionID, EmpleadoID, ClienteID, VehiculoID, FechaCotizacion, EstadoCotizacion, FechaSeguimiento } = req.body;
+        const { CotizacionID, EmpleadoID, ClienteID, VehiculoID, FechaCotizacion, EstadoCotizacion, FechaSeguimiento, NoFactura, PrecioPlacas, PrecioCotizacion, ColoresDisponibles } = req.body;
         console.log(EmpleadoID);
         try {
-            var query = 'INSERT INTO Cotizaciones (EmpleadoID, ClienteID, VehiculoID, FechaCotizacion, EstadoCotizacion, FechaSeguimiento) ';
+            var query = 'INSERT INTO Cotizaciones (EmpleadoID, ClienteID, VehiculoID, FechaCotizacion, EstadoCotizacion, FechaSeguimiento, NoFactura, PrecioPlacas, PrecioCotizacion, ColoresDisponibles) ';
             query = query + 'VALUES ';
-            query = query + '(?, ?, ?, ?, ?, ?) ';
+            query = query + '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ';
             console.log(query);
             const result = await sequelize.query(query,
                 {
-                    replacements: [EmpleadoID, ClienteID, VehiculoID, FechaCotizacion, EstadoCotizacion, FechaSeguimiento],
+                    replacements: [EmpleadoID, ClienteID, VehiculoID, FechaCotizacion, EstadoCotizacion, FechaSeguimiento, NoFactura, PrecioPlacas, PrecioCotizacion, ColoresDisponibles],
                     type: sequelize.QueryTypes.INSERT
                 });
             res.status(200).json({ message: 'Cotización guardada con éxito', result });
@@ -246,34 +247,73 @@ const cotizacionController = {
 
     put: async (req, res) => {
         try {
-            const { CotizacionID, EmpleadoID, ClienteID, VehiculoID, EstadoCotizacion, FechaSeguimiento } = req.body;
-    
-            // Usar parámetros seguros para evitar SQL Injection
-            let query = `
-                UPDATE Cotizaciones 
-                SET EmpleadoID = :EmpleadoID, 
-                    ClienteID = :ClienteID, 
-                    VehiculoID = :VehiculoID, 
-                    EstadoCotizacion = :EstadoCotizacion, 
-                    FechaSeguimiento = :FechaSeguimiento
-                WHERE CotizacionID = :CotizacionID;
-            `;
-    
-            const result = await sequelize.query(query, {
-                replacements: {
-                    EmpleadoID,
-                    ClienteID,
-                    VehiculoID,
-                    EstadoCotizacion,
-                    FechaSeguimiento,
-                    CotizacionID
-                },
-                type: sequelize.QueryTypes.UPDATE
-            });
-    
-            res.status(200).json({ message: 'Cotización actualizada correctamente', result });
+            const t = await sequelize.transaction();
+            const { CotizacionID, EmpleadoID, ClienteID, VehiculoID, EstadoCotizacion, FechaSeguimiento, NoFactura, PrecioPlacas, PrecioCotizacion, ColoresDisponibles } = req.body;
+
+            try {
+                // Usar parámetros seguros para evitar SQL Injection
+                let query = `
+                    UPDATE Cotizaciones 
+                    SET EmpleadoID = :EmpleadoID, 
+                        ClienteID = :ClienteID, 
+                        VehiculoID = :VehiculoID, 
+                        EstadoCotizacion = :EstadoCotizacion, 
+                        FechaSeguimiento = :FechaSeguimiento,
+                        NoFactura = :NoFactura, 
+                        PrecioPlacas = :PrecioPlacas,
+                        PrecioCotizacion = :PrecioCotizacion,
+                        ColoresDisponibles= :ColoresDisponibles
+                    WHERE CotizacionID = :CotizacionID
+                `;
+
+                const result = await sequelize.query(query, {
+                    replacements: {
+                        EmpleadoID,
+                        ClienteID,
+                        VehiculoID,
+                        EstadoCotizacion,
+                        FechaSeguimiento,
+                        CotizacionID,
+                        NoFactura,
+                        PrecioPlacas,
+                        PrecioCotizacion,
+                        ColoresDisponibles
+                    },
+                    transaction: t,
+                    type: sequelize.QueryTypes.UPDATE
+                });
+
+                //Si se está cambiando a estado [Finalizado] entonces se inserta una nuevo registro a la tabla seguimiento
+                if (EstadoCotizacion === "Finalizada" || EstadoCotizacion === "Finalizado") {
+                    let fechaActual = new Date();
+                    let fechaActualFormateada = fechaActual.getFullYear() + '-' + ('0' + (fechaActual.getMonth() + 1)).slice(-2) + '-' + ('0' + fechaActual.getDate()).slice(-2);
+
+                    query = "INSERT INTO  jpmotors_bd.Seguimientos (CotizacionID, Comentario , FechaSeguimiento, SeguimientoTipoID ) ";
+                    query = query + " VALUES ";
+                    query = query + "(" + CotizacionID + "," + "'Finalizando cotización" + "No Factura: " + NoFactura + "','" + fechaActualFormateada + "'," + 6;
+                    query = query + ")";
+
+                    const resultSeguimiento = await sequelize.query(query,
+                        {
+                            type: sequelize.QueryTypes.INSERT,
+                            transaction: t
+                        });
+
+                    if (resultSeguimiento.length <= 0)
+                        throw new Error("La cotización se está intentando Finalizar pero no se logró crear su seguimientod de cierre");
+                }
+
+                await t.commit();
+                res.status(200).json({ message: 'Cotización actualizada correctamente', result });
+
+            } catch (error) {
+                await t.rollback();
+                throw new Error(error.message);
+
+            }
+
         } catch (error) {
-            console.log('Error al actualizar cotización:', error);
+            console.log('Error al actualizar cotización:', error.message);
             res.status(500).send('Error interno del servidor');
         }
     },
@@ -282,76 +322,126 @@ const cotizacionController = {
         try {
             // Obtener el CotizacionID de los parámetros de la URL
             const { CotizacionID } = req.params;
-            const { EmpleadoID, ClienteID, VehiculoID, EstadoCotizacion, FechaSeguimiento } = req.body;
-    
+            const { EmpleadoID, ClienteID, VehiculoID, EstadoCotizacion, FechaSeguimiento, NoFactura, PrecioPlacas, PrecioCotizacion, ColoresDisponibles } = req.body;
+
             // Asegurarse de que CotizacionID esté presente
             if (!CotizacionID) {
                 return res.status(400).json({ error: 'CotizacionID es requerido en la URL' });
             }
-    
+
             let fieldsToUpdate = [];
             let replacements = { CotizacionID };
-    
+
             // Construir la consulta dependiendo de los campos presentes en el body
             if (EmpleadoID !== undefined) {
                 fieldsToUpdate.push('EmpleadoID = :EmpleadoID');
                 replacements.EmpleadoID = EmpleadoID;
             }
-    
+
             if (ClienteID !== undefined) {
                 fieldsToUpdate.push('ClienteID = :ClienteID');
                 replacements.ClienteID = ClienteID;
             }
-    
+
             if (VehiculoID !== undefined) {
                 fieldsToUpdate.push('VehiculoID = :VehiculoID');
                 replacements.VehiculoID = VehiculoID;
             }
-    
+
             if (EstadoCotizacion !== undefined) {
                 fieldsToUpdate.push('EstadoCotizacion = :EstadoCotizacion');
                 replacements.EstadoCotizacion = EstadoCotizacion;
             }
-    
+
             if (FechaSeguimiento !== undefined) {
                 fieldsToUpdate.push('FechaSeguimiento = :FechaSeguimiento');
                 replacements.FechaSeguimiento = FechaSeguimiento;
             }
-    
+
+            if (NoFactura !== undefined) {
+                fieldsToUpdate.push('NoFactura = :NoFactura');
+                replacements.NoFactura = NoFactura
+            }
+
+            if (PrecioPlacas !== undefined) {
+                fieldsToUpdate.push('PrecioPlacas = :PrecioPlacas');
+                replacements.PrecioPlacas = PrecioPlacas
+            }
+
+            if (PrecioCotizacion !== undefined) {
+                fieldsToUpdate.push('PrecioCotizacion = :PrecioCotizacion');
+                replacements.PrecioCotizacion = PrecioCotizacion
+            }
+
+            if (ColoresDisponibles !== undefined) {
+                fieldsToUpdate.push('ColoresDisponibles = :ColoresDisponibles');
+                replacements.ColoresDisponibles = ColoresDisponibles
+            }
+
             // Si no hay campos para actualizar, devolver un error
             if (fieldsToUpdate.length === 0) {
                 return res.status(400).json({ error: 'No hay campos para actualizar' });
             }
-    
-            let query = `
+
+            let t = await sequelize.transaction();
+
+            try {
+                let query = `
                 UPDATE Cotizaciones 
                 SET ${fieldsToUpdate.join(', ')}
                 WHERE CotizacionID = :CotizacionID;
             `;
-    
-            const result = await sequelize.query(query, {
-                replacements,
-                type: sequelize.QueryTypes.UPDATE
-            });
-    
-            res.status(200).json({ message: 'Cotización actualizada correctamente', result });
+
+                const result = await sequelize.query(query, {
+                    replacements,
+                    type: sequelize.QueryTypes.UPDATE,
+                    transaction: t
+                });
+                
+                //Si se está cambiando a estado [Finalizado] entonces se inserta una nuevo registro a la tabla seguimiento
+                if (EstadoCotizacion === "Finalizada" || EstadoCotizacion === "Finalizado") {
+                    let fechaActual = new Date();
+                    let fechaActualFormateada = fechaActual.getFullYear() + '-' + ('0' + (fechaActual.getMonth() + 1)).slice(-2) + '-' + ('0' + fechaActual.getDate()).slice(-2);
+
+                    query = "INSERT INTO  jpmotors_bd.Seguimientos (CotizacionID, Comentario , FechaSeguimiento, SeguimientoTipoID ) ";
+                    query = query + " VALUES ";
+                    query = query + "(" + CotizacionID + "," + "'Finalizando cotización" + "No Factura: " + NoFactura + "','" + fechaActualFormateada + "'," + 6;
+                    query = query + ")";
+
+                    const resultSeguimiento = await sequelize.query(query,
+                        {
+                            type: sequelize.QueryTypes.INSERT,
+                            transaction: t
+                        });
+
+                    if (resultSeguimiento.length <= 0)
+                        throw new Error("La cotización se está intentando Finalizar pero no se logró crear su seguimientod de cierre");
+                }
+
+                t.commit()
+                res.status(200).json({ message: 'Cotización actualizada correctamente', result });
+            } catch (error) {
+                t.rollback();
+                throw new Error(error.message);
+
+            }
         } catch (error) {
             console.log('Error al actualizar cotización:', error);
             res.status(500).send('Error interno del servidor');
         }
     },
-    
-    
-    
 
-    Reasignar:async (req, res) => {
+
+
+
+    Reasignar: async (req, res) => {
         const { EmpleadoID } = req.body; // Obtenemos el nuevo EmpleadoID del body
         const CotizacionID = req.params.id; // Obtenemos el ID de la cotización de los parámetros
-    
+
         if (!EmpleadoID) {
             return res.status(400).json({ message: "Se requiere el EmpleadoID para reasignar la cotización." });
         }
-    
+
         try {
             // Consulta para reasignar el empleado
             let query = `
@@ -359,7 +449,7 @@ const cotizacionController = {
                 SET EmpleadoID = :EmpleadoID
                 WHERE CotizacionID = :CotizacionID;
             `;
-    
+
             const result = await sequelize.query(query, {
                 replacements: {
                     EmpleadoID,
@@ -367,11 +457,11 @@ const cotizacionController = {
                 },
                 type: sequelize.QueryTypes.UPDATE
             });
-    
+
             if (result[1] === 0) { // Si no se actualizó ninguna fila
                 return res.status(404).json({ message: "No se encontró la cotización con el ID proporcionado." });
             }
-    
+
             res.status(200).json({ message: 'Cotización reasignada correctamente', result });
         } catch (error) {
             console.error('Error al reasignar empleado:', error);
