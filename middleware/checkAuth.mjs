@@ -1,31 +1,34 @@
-import jwt  from "jsonwebtoken";
-import config from "../utils/config.mjs";
-import Empleado from "../models/empleado.mjs";
+// checkAuth.mjs
+import jwt from 'jsonwebtoken';
+import config from '../utils/config.mjs';
 
-const checkAuth = async (req, res, next) => {
-    let token;
-    if(
-        req.headers.authorization &&
-        req.headers.authorization.startsWith('Bearer')
-    ){
-        try {
-            token = req.headers.authorization.split(' ')[1];
-            const decoded = jwt.verify(token, config.SECRET);
+const checkAuth = (req, res, next) => {
+  const token = req.headers['authorization'];
 
-            req.user = await Empleado.findByPk(decoded.id);
-                        
-            return next();
-        } catch (error) {
-            return res.status(404).json({message: 'Hubo un error'});
-        }
+  if (!token) {
+    return res.status(403).json({ message: 'No token provided' });
+  }
+
+  jwt.verify(token, config.SECRET, (err, decoded) => {
+    if (err) {
+      return res.status(500).json({ message: 'Failed to authenticate token' });
     }
 
-    if(!token){
-        const error = new Error('Token no válido');
-        return res.status(401).json({ message: error.message });
-    }
-
+    req.userId = decoded.id;
+    req.userRoles = decoded.roles;
     next();
-}
+  });
+};
 
-export default checkAuth;
+const checkRole = (roles) => {
+  return (req, res, next) => {
+    const userRoles = req.userRoles;
+    if (roles.some(role => userRoles.includes(role))) {
+      next();
+    } else {
+      res.status(403).json({ message: 'Permiso denegado' });
+    }
+  };
+};
+
+export default { checkAuth, checkRole };
